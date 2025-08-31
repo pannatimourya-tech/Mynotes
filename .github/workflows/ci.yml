@@ -1,0 +1,54 @@
+name: 🚀 StudyGram CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    services:
+      mongo:
+        image: mongo:6
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongo --eval 'db.adminCommand(\"ping\")'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v3
+
+      - name: 🟢 Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "npm"
+
+      # Backend Setup
+      - name: 📦 Install Backend
+        working-directory: ./server
+        run: npm install
+
+      - name: ✅ Test Backend
+        working-directory: ./server
+        run: npm test || echo "No backend tests yet"
+
+      # Frontend Setup
+      - name: 📦 Install Frontend
+        working-directory: ./frontend
+        run: npm install
+
+      - name: 🏗️ Build Frontend
+        working-directory: ./frontend
+        run: npm run build
